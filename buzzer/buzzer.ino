@@ -1,3 +1,5 @@
+#define BUTTON A7
+
 const int c = 261;
 const int d = 294;
 const int e = 329;
@@ -26,6 +28,8 @@ void setup()
 {
   //Setup pin modes
   pinMode(buzzerPin, OUTPUT);
+  while (analogRead(BUTTON) > 500) {}
+  while (analogRead(BUTTON) < 500) {}
 }
  
 void loop()

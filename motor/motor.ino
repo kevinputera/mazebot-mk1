@@ -6,11 +6,10 @@ MeDCMotor motor_left(M1);
 MeDCMotor motor_right(M2);
 
 void setup() {
-  pinMode(BUTTON, INPUT);
-  long state = analogRead(BUTTON);
-  while (state > 500) {
-    delay(10);
-  }
+
+    
+    pinMode(BUTTON, INPUT);
+    while (analogRead(BUTTON) > 500) {}
 }
 
 void loop() {
