@@ -7,16 +7,15 @@ things to note:
 
 PORTS & PINS:
 
-pin A0 IR left
-pin A1 IR right
-pin A2 sound low frequency
-pin A3 sound high frequency
+- pin A0 IR left
+- pin A1 IR right
+- pin A2 sound low frequency
+- pin A3 sound high frequency
 
-port M1 left motor
-port M2 right motor
-
-port 1 line sensor
-port 2 ultrasonic sensor
+- port M1 left motor
+- port M2 right motor
+- port 1 line sensor
+- port 2 ultrasonic sensor
 
 SOFTWARE MODULES:
 
