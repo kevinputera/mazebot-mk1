@@ -1,7 +1,0 @@
-pin A0 IR left
-pin A1 IR right
-pin A2 sound low frequency
-pin A3 sound high frequency
-
-port M1 left motor
-port M2 right motor
