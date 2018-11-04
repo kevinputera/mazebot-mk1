@@ -6,16 +6,14 @@
 #define LOW_FREQ_FILTER A2
 #define HIGH_FREQ_FILTER A3
 #define BUTTON A7
-// define constants for PID controller
-#define KP 1
-#define KI 0
-#define KD 0
-#define TIME_INTERVAL 0.01
-#define SETPOINT 500
+// define constants for P controller
+#define KP 4
+#define SETPOINT 935
+#define BASE_SPEED 255
 
 // initialize left and right motor objects
-MeDCMotor motor_left(M1);
-MeDCMotor motor_right(M2);
+MeDCMotor motor_left(M2);
+MeDCMotor motor_right(M1);
 // initialize line detector object
 MeLineFollower line_detector(PORT_1);
 // initialize ultrasonic sensor object
@@ -50,7 +48,7 @@ void loop() {
     if (line_detector.readSensor1 == 1) {
         // pid controller code here!
         int state = get_IR_dist(IR_LEFT);
-        pid_run(KP, KI, KD, state, SETPOINT, TIME_INTERVAL);
+        p_controller_run(KP, state, SETPOINT, BASE_SPEED);
 
         // skips the rest of the code
         return;
@@ -103,16 +101,21 @@ void turn(int code) {
 
 }
 
-// function for the PID controller
-void pid_run(int Kp, int Ki, int Kd, int state, int setpoint, int time_interval) {
-    int error = state - setpoint;
-    integral = integral + (error * time_interval);
-    int derivative = (error - error_prior) / time_interval;
-    int output = (Kp * error) + (Ki * integral) + (Kd * derivative);
+// function for the P controller
+void p_controller_run(float kp, int state, int setpoint, int base_speed) {
+    float error = state - setpoint;
+    float output = (kp * error);
+
+    // adjust output to account for the non-linear nature of the IR reading
+    if (output > 0) {
+        output *= 2;
+    }
 
     // convert output into change in motor speeds
-
-    error_prior = error;
+    int speed_left = (base_speed - output) * (-1);
+    int speed_right = (base_speed + output);
+    motor_left.run(speed_left);
+    motor_right.run(speed_right);
 }
 
 // function to get the distance of the vehicle from the wall
