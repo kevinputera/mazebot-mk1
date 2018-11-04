@@ -12,8 +12,8 @@ PORTS & PINS:
 - pin A2 sound low frequency
 - pin A3 sound high frequency
 
-- port M1 left motor
-- port M2 right motor
+- port M1 right motor
+- port M2 left motor
 - port 1 line sensor
 - port 2 ultrasonic sensor
 
