@@ -7,8 +7,8 @@
 // define constants for P controller
 #define KP_LEFT 2.2
 #define KP_RIGHT 2.2
-#define KI_LEFT 0.08
-#define KI_RIGHT 0.08
+#define KI_LEFT 0.1
+#define KI_RIGHT 0.1
 #define SETPOINT_LEFT 546
 #define SETPOINT_RIGHT 717
 #define BASE_SPEED 255
@@ -21,6 +21,8 @@ MeLineFollower line_detector(PORT_1);
 
 float integral_left = 0;
 float integral_right = 0;
+
+int count = 1;
 
 void setup() {
     Serial.begin(9600);
@@ -43,15 +45,44 @@ void loop() {
     if (line_detector.readSensor1() == 0) {
         motor_left.stop();
         motor_right.stop();
-        while (analogRead(BUTTON) > 500) {}
-        while (analogRead(BUTTON) < 500) {}
+        delay(200);
+
+        if (count == 1 || count == 2) {
+            // turn right
+            motor_left.run(-255);
+            motor_right.run(-255);
+            delay(290);
+            motor_left.stop();
+            motor_right.stop();
+
+        } else if (count == 3) {
+            // turn left
+            motor_left.run(255);
+            motor_right.run(255);
+            delay(290);
+            motor_left.stop();
+            motor_right.stop();
+          
+        } else if (count == 4) {
+            // turn 180
+            motor_left.run(255);
+            motor_right.run(255);
+            delay(550);
+            motor_left.stop();
+            motor_right.stop();
+          
+        } else if (count == 5) {
+            motor_left.stop();
+            motor_right.stop();
+            while (true) {}
+        }
+
+        count += 1;
+        delay(200);
+        
     } else {
         float state_left = get_IR_dist(IR_LEFT);
         float state_right = get_IR_dist(IR_RIGHT);
-        /*Serial.print("LEFT: ");
-        Serial.println(state_left);
-        Serial.print("RIGHT: ");
-        Serial.println(state_right);*/
         p_controller_run(KP_LEFT, KP_RIGHT, KI_LEFT, KI_RIGHT, state_left, state_right, SETPOINT_LEFT, SETPOINT_RIGHT, BASE_SPEED);
     }
 }
