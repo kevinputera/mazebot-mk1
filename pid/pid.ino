@@ -61,6 +61,7 @@ void p_controller_run(float kp_left, float kp_right, float ki_left, float ki_rig
     float error_left = state_left - setpoint_left;
     integral_left = integral_left + (error_left * 0.01);
     float output_left = kp_left * error_left + ki_left * integral_left;
+
     float error_right = state_right - setpoint_right;
     integral_right = integral_right + (error_right * 0.01);
     float output_right = kp_right * error_right + ki_right * integral_right;
