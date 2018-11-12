@@ -7,45 +7,44 @@
 #define HIGH_FREQ_FILTER A3
 #define BUTTON A7
 
-// define constants for PI controller
-#define KP_LEFT 2.3
-#define KP_RIGHT 2.3
-#define KI_LEFT 0.1
-#define KI_RIGHT 0.1
-#define SETPOINT_LEFT 640
-#define SETPOINT_RIGHT 640
+// define constants for on/off controller
+#define SETPOINT_LEFT 660
+#define SETPOINT_RIGHT 630
 #define BASE_SPEED 255
-#define INTERVAL 0.01
 
 // define delays
-#define DELAY_AVG 20 // delay for the get_avg_reading function
-#define DELAY_COLOR 100 // delay for the get_color_code function
-#define DELAY_TURN 100
+#define DELAY_AVG_LIGHT 20 // delay for the get_avg_reading function
+#define DELAY_CHALLENGE 100 // delay before solving the challenges
+#define DELAY_TURN 100 // delay after turning
+#define DELAY_BLINK 20
 
 // define turn waits (how long should the motors run for turns)
-#define RIGHT_TURN 290
-#define LEFT_TURN 290
-#define U_TURN 580
+#define RIGHT_TURN 300
+#define LEFT_TURN 285
+#define U_TURN 770
 #define STRAIGHT 700
 
 // define color calibration values
-#define WHITE 384
-#define BLACK 53
-#define GREY 331
+#define WHITE 309
+#define BLACK 54
+#define GREY 255
 
 // define color reading boundaries
-#define WHITE_UPPER 280
-#define WHITE_LOWER 220
-#define BLACK_UPPER 10
-// #define BLACK_LOWER (not used since black produces the lowest value)
-#define RED_UPPER 15
-#define RED_LOWER 28
-#define ORANGE_UPPER 32
-#define ORANGE_LOWER 55
-#define GREEN_UPPER 80
-#define GREEN_LOWER 97
-#define BLUE_UPPER 97
-#define BLUE_LOWER 130
+#define WHITE_UPPER 800
+#define WHITE_LOWER 520
+#define BLACK_UPPER 90
+#define RED_UPPER 110
+#define RED_LOWER 90
+#define ORANGE_UPPER 180
+#define ORANGE_LOWER 110
+#define GREEN_UPPER 265
+#define GREEN_LOWER 200
+#define BLUE_UPPER 520
+#define BLUE_LOWER 350
+
+// define number of samples taken
+#define NUM_OF_SOUND_SAMPLES 200
+#define NUM_OF_LIGHT_SAMPLES 5
 
 // initialize peripheral objects
 MeDCMotor motor_left(M1);
@@ -54,10 +53,6 @@ MeLineFollower line_detector(PORT_1);
 MeUltrasonicSensor ultrasonic_sensor(PORT_2);
 MeRGBLed rgb_led(PORT_7);
 MeLightSensor light_sensor(PORT_8);
-
-// declare global variables for the PI controller
-float integral_left = 0;
-float integral_right = 0;
 
 void setup() {
     // initialize left and right IR sensor pins
@@ -71,50 +66,82 @@ void setup() {
     // initialize start button
     // press then release button to begin the run
     pinMode(BUTTON, INPUT);
+
+    // turn off the LED
+    rgb_led.setColor(0, 0, 0);
+    rgb_led.show();
+    
     while (analogRead(BUTTON) > 500) {}
     while (analogRead(BUTTON) < 500) {}
+
+    // turn on the LED
+    rgb_led.setColor(0, 255, 255);
+    rgb_led.show();
 }
 
 void loop() {
     // run wall following so long as no black line is detected
     if (line_detector.readSensor1() == 1) {
-        // PI controller code here!
+        // on/off controller
         int state_left = get_IR_reading(IR_LEFT);
         int state_right = get_IR_reading(IR_RIGHT);
-        follow_wall(KP_LEFT, KP_RIGHT, KI_LEFT, KI_RIGHT, state_left, state_right, SETPOINT_LEFT, SETPOINT_RIGHT, BASE_SPEED);
+        bangbang(state_left, state_right, 10);
     } else {
-        // check sound challenge
-
-        // solve sound challenge
+        // encountered black line
+        // stop both motors
+        motor_left.stop();
+        motor_right.stop();
         
-        // solve color challenge
-        int turn_code = get_color_code();
-        while (turn_code == -1) {
-            // loop to make sure to get a color code
+        // check sound and color challenge
+        delay(DELAY_CHALLENGE);
+        int turn_code = get_sound_code();
+        if (turn_code == -1) {
             turn_code = get_color_code();
+            while (turn_code == -1) {
+                // repeat color detection if color is not recognized
+                turn_code = get_color_code();
+            }
         }
-
+        
         // turn the vehicle according to the instruction
         turn(turn_code);
-        
-        // reset integral values
-        integral_left = 0;
-        integral_right = 0;
+
+        if (turn_code == 5) {
+            // turn_code = 5 -> black color -> end of challenge
+            ending();
+        }
     }
 }
 
 // function to get the average LDR reading
 // to be used in the get_color_code function
-int get_avg_reading(int times) {
-    int reading = 0;
+int get_light_avg(int times) {
+    int reading;
     int total = 0;
-
     for (int i = 0; i < times; i += 1) {
-        delay(DELAY_AVG)
+        delay(DELAY_AVG_LIGHT);
         reading = light_sensor.read();
         total = reading + total;
     }
     return (total / times);
+}
+
+// function to get the avg 3000Hz signal reading
+float get_thousand_signal(int times) {
+    float thousandValue = 0;
+    for (int i = 0; i < times; i += 1) {
+        thousandValue += analogRead(HIGH_FREQ_FILTER);
+    }
+    return (thousandValue / times);
+}
+
+// function to get the avg 300Hz signal reading
+float get_hundred_signal(int times) {
+    float hundredValue = 0;
+    for (int i = 0; i < times; i += 1) {
+        hundredValue += analogRead(LOW_FREQ_FILTER);
+    }
+    return (hundredValue / times);
 }
 
 // function to get the color codes(in integers) from the color challenge
@@ -127,9 +154,8 @@ int get_avg_reading(int times) {
    BLACK -> return 5
    OTHERS -> return -1 */
 int get_color_code() {
-    delay(DELAY_COLOR);
-    int reading = get_avg_reading(5);
-    float color = (reading - BLACK) / GREY * 255;
+    int reading = get_light_avg(NUM_OF_LIGHT_SAMPLES);
+    float color = (float) (reading - BLACK) / GREY * 255;
 
     // get color codes
     if (color > WHITE_LOWER && color < WHITE_UPPER) {
@@ -153,8 +179,22 @@ int get_color_code() {
    A < B -> return 1
    A = B -> return 2
    NO SOUND CHALLENGE -> return -1 */
-int get_sound_diff() {
-
+int get_sound_code() {
+    float thousand_signal = get_thousand_signal(NUM_OF_SOUND_SAMPLES);
+    float hundred_signal = get_hundred_signal(NUM_OF_SOUND_SAMPLES);
+    float ratio = hundred_signal / thousand_signal;
+ 
+    if (hundred_signal < 100 && thousand_signal < 100) {
+        // no sound challenge
+        return -1;
+    }
+    if (ratio > 5){
+        return 1;
+    }
+    if (ratio < 0.5){
+        return 0;
+    }
+    return 2;
 }
 
 // function to turn the robot after the challenges
@@ -184,8 +224,8 @@ void turn(int code) {
 
     } else if (code == 2) {
         // turn 180 (u-turn)
-        motor_left.run(255);
-        motor_right.run(255);
+        motor_left.run(-170);
+        motor_right.run(-200);
         delay(U_TURN);
         motor_left.stop();
         motor_right.stop();
@@ -244,27 +284,18 @@ void turn(int code) {
     delay(DELAY_TURN);
 }
 
-// function for the PI controller
-void follow_wall(float kp_left, float kp_right, float ki_left, float ki_right, int state_left, int state_right, int setpoint_left, int setpoint_right, int base_speed) {
-    float error_left = state_left - setpoint_left;
-    integral_left = integral_left + (error_left * INTERVAL);
-    float output_left = kp_left * error_left + ki_left * integral_left;
-
-    float error_right = state_right - setpoint_right;
-    integral_right = integral_right + (error_right * INTERVAL);
-    float output_right = kp_right * error_right + ki_right * integral_right;
-
-    // convert output into change in motor speeds
-    int speed_left = (base_speed + output_right) * (-1);
-    int speed_right = (base_speed + output_left);
-
-   /* Serial.print("LEFT: ");
-    Serial.println(speed_left);
-    Serial.print("RIGHT: ");
-    Serial.println(speed_right); */
-
-    motor_left.run(speed_left);
-    motor_right.run(speed_right);
+// function for the on/off controller
+void bangbang(int state_left, int state_right, int tolerance) {
+    if (state_left < (SETPOINT_LEFT - tolerance)) {
+        motor_left.run(-255);
+        motor_right.run(50);
+    } else if (state_right < (SETPOINT_RIGHT - tolerance)) {
+        motor_left.run(-50);
+        motor_right.run(255);
+    } else {
+        motor_left.run(-255);
+        motor_right.run(240);
+    }
 }
 
 // function to get the distance of the vehicle from the wall
@@ -274,7 +305,16 @@ int get_IR_reading(int pin) {
     return raw;
 }
 
-// function to play celebration tune and disco LED
+// function to play ending LED blink
 void ending() {
-    
+    while (true) {
+        // leave the microcontroller in infinite loop
+        // press the reset button to exit
+        unsigned char red = random(256);
+        unsigned char green = random(256);
+        unsigned char blue = random(256);
+        rgb_led.setColor(red, green, blue);
+        rgb_led.show();
+        delay(DELAY_BLINK);
+    }
 }
