@@ -8,21 +8,21 @@
 #define BUTTON A7
 
 // define constants for on/off controller
-#define SETPOINT_LEFT 660
-#define SETPOINT_RIGHT 630
+#define SETPOINT_LEFT 600
+#define SETPOINT_RIGHT 580
 #define BASE_SPEED 255
 
 // define delays
-#define DELAY_AVG_LIGHT 20 // delay for the get_avg_reading function
+#define DELAY_AVG_LIGHT 10 // delay for the get_avg_reading function
 #define DELAY_CHALLENGE 100 // delay before solving the challenges
 #define DELAY_TURN 100 // delay after turning
-#define DELAY_BLINK 20
+#define DELAY_BLINK 70
 
 // define turn waits (how long should the motors run for turns)
-#define RIGHT_TURN 300
-#define LEFT_TURN 285
-#define U_TURN 770
-#define STRAIGHT 700
+#define RIGHT_TURN 275
+#define LEFT_TURN 270
+#define U_TURN 745
+#define STRAIGHT 610
 
 // define color calibration values
 #define WHITE 309
@@ -33,10 +33,10 @@
 #define WHITE_UPPER 800
 #define WHITE_LOWER 520
 #define BLACK_UPPER 90
-#define RED_UPPER 110
+#define RED_UPPER 140
 #define RED_LOWER 90
 #define ORANGE_UPPER 180
-#define ORANGE_LOWER 110
+#define ORANGE_LOWER 140
 #define GREEN_UPPER 265
 #define GREEN_LOWER 200
 #define BLUE_UPPER 520
@@ -85,7 +85,7 @@ void loop() {
         // on/off controller
         int state_left = get_IR_reading(IR_LEFT);
         int state_right = get_IR_reading(IR_RIGHT);
-        bangbang(state_left, state_right, 10);
+        bangbang(state_left, state_right, 5);
     } else {
         // encountered black line
         // stop both motors
@@ -94,22 +94,24 @@ void loop() {
         
         // check sound and color challenge
         delay(DELAY_CHALLENGE);
-        int turn_code = get_sound_code();
-        if (turn_code == -1) {
+        int turn_code = get_color_code();
+        while (turn_code == -1) {
+            // repeat color detection if color is not recognized
             turn_code = get_color_code();
-            while (turn_code == -1) {
-                // repeat color detection if color is not recognized
-                turn_code = get_color_code();
+        }
+
+        // if the color black is detected, check whether it is a sound challenge
+        if (turn_code == 5) {
+            turn_code = get_sound_code();
+            if (turn_code == -1) {
+                // if the color black is detected and no sound challenge, end the run
+                // put the maze into infinite loop to end the run
+                ending();
             }
         }
         
         // turn the vehicle according to the instruction
         turn(turn_code);
-
-        if (turn_code == 5) {
-            // turn_code = 5 -> black color -> end of challenge
-            ending();
-        }
     }
 }
 
@@ -184,16 +186,19 @@ int get_sound_code() {
     float hundred_signal = get_hundred_signal(NUM_OF_SOUND_SAMPLES);
     float ratio = hundred_signal / thousand_signal;
  
-    if (hundred_signal < 100 && thousand_signal < 100) {
+    if (hundred_signal < 50 && thousand_signal < 50) {
         // no sound challenge
         return -1;
     }
     if (ratio > 5){
+        // freq. of A < freq. of B
         return 1;
     }
-    if (ratio < 0.5){
+    if (ratio < 0.35){
+        // freq. of A > freq. of B
         return 0;
     }
+    // freq. of A == freq. of B
     return 2;
 }
 
@@ -224,7 +229,7 @@ void turn(int code) {
 
     } else if (code == 2) {
         // turn 180 (u-turn)
-        motor_left.run(-170);
+        motor_left.run(-150);
         motor_right.run(-200);
         delay(U_TURN);
         motor_left.stop();
