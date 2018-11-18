@@ -42,6 +42,19 @@
 #define NUM_OF_SOUND_SAMPLES 200
 #define NUM_OF_LIGHT_SAMPLES 5
 
+// define the frequency for the notes used in the ending tune
+#define NOTE_E6  1319
+#define NOTE_G6  1568
+#define NOTE_A6  1760
+#define NOTE_AS6 1865
+#define NOTE_B6  1976
+#define NOTE_C7  2093
+#define NOTE_D7  2349
+#define NOTE_E7  2637
+#define NOTE_F7  2794
+#define NOTE_G7  3136
+#define NOTE_A7  3520
+
 // initialize peripheral objects
 MeDCMotor motor_left(M1);
 MeDCMotor motor_right(M2);
@@ -308,23 +321,80 @@ void bangbang(int state_left, int state_right) {
     }
 }
 
-// function to get the distance of the vehicle from the wall
-// we'll use the value 0-1023 to represent the distance
+// function to get the IR readings
 int get_IR_reading(int pin) {
     int raw = analogRead(pin);
     return raw;
 }
 
-// function to play ending LED blink
+// function to play ending tune
 void ending() {
+    // set the tones
+    int melody[] = {
+        NOTE_E7, NOTE_E7, 0, NOTE_sE7,
+        0, NOTE_C7, NOTE_E7, 0,
+        NOTE_G7, 0, 0,  0,
+        NOTE_G6, 0, 0, 0,
+
+        NOTE_C7, 0, 0, NOTE_G6,
+        0, 0, NOTE_E6, 0,
+        0, NOTE_A6, 0, NOTE_B6,
+        0, NOTE_AS6, NOTE_A6, 0,
+
+        NOTE_G6, NOTE_E7, NOTE_G7,
+        NOTE_A7, 0, NOTE_F7, NOTE_G7,
+        0, NOTE_E7, 0, NOTE_C7,
+        NOTE_D7, NOTE_B6, 0, 0,
+
+        NOTE_C7, 0, 0, NOTE_G6,
+        0, 0, NOTE_E6, 0,
+        0, NOTE_A6, 0, NOTE_B6,
+        0, NOTE_AS6, NOTE_A6, 0,
+
+        NOTE_G6, NOTE_E7, NOTE_G7,
+        NOTE_A7, 0, NOTE_F7, NOTE_G7,
+        0, NOTE_E7, 0, NOTE_C7,
+        NOTE_D7, NOTE_B6, 0, 0};
+
+    // set the durations of the tones
+    int note_duration[] = {
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+
+        9, 9, 9,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+
+        9, 9, 9,
+        12, 12, 12, 12,
+        12, 12, 12, 12,
+        12, 12, 12, 12};
+
     while (true) {
         // leave the microcontroller in infinite loop
         // press the reset button to exit
-        unsigned char red = random(256);
-        unsigned char green = random(256);
-        unsigned char blue = random(256);
-        rgb_led.setColor(red, green, blue);
-        rgb_led.show();
-        delay(DELAY_BLINK);
+        int size = sizeof(melody) / sizeof(int);
+        for (int i = 0; i < size; i += 1) {
+            int duration = 1000 / note_duration[i];
+            tone(8, melody[i], duration);
+            int pause = duration * 1.5;
+            delay(pause);
+            noTone(8);
+        }
+
+        delay(300);
     }
 }
