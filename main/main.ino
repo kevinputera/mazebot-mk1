@@ -62,6 +62,7 @@ MeLineFollower line_detector(PORT_1);
 MeUltrasonicSensor ultrasonic_sensor(PORT_2);
 MeRGBLed rgb_led(PORT_7);
 MeLightSensor light_sensor(PORT_8);
+MeBuzzer buzzer;
 
 void setup() {
     // initialize left and right IR sensor pins
@@ -331,7 +332,7 @@ int get_IR_reading(int pin) {
 void ending() {
     // set the tones
     int melody[] = {
-        NOTE_E7, NOTE_E7, 0, NOTE_sE7,
+        NOTE_E7, NOTE_E7, 0, NOTE_E7,
         0, NOTE_C7, NOTE_E7, 0,
         NOTE_G7, 0, 0,  0,
         NOTE_G6, 0, 0, 0,
@@ -386,15 +387,14 @@ void ending() {
     while (true) {
         // leave the microcontroller in infinite loop
         // press the reset button to exit
-        int size = sizeof(melody) / sizeof(int);
-        for (int i = 0; i < size; i += 1) {
+        int size_melody = sizeof(melody) / sizeof(int);
+        for (int i = 0; i < size_melody; i += 1) {
             int duration = 1000 / note_duration[i];
-            tone(8, melody[i], duration);
+            buzzer.tone(8, melody[i], duration);
             int pause = duration * 1.5;
             delay(pause);
-            noTone(8);
+            buzzer.noTone(8);
         }
-
         delay(300);
     }
 }
