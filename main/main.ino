@@ -328,18 +328,3 @@ void ending() {
         delay(DELAY_BLINK);
     }
 }
-
-loop {
-    if line sensor detects white {
-        on/off controller
-    } else {
-        run color detection
-        if color black is detected {
-            run sound recognition
-            if no sound {
-                stop the run
-            }
-        }
-        turn the vehicle
-    }
-}
