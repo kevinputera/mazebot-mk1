@@ -10,6 +10,7 @@
 // define constants for on/off controller
 #define SETPOINT_LEFT 600
 #define SETPOINT_RIGHT 580
+#define TOLERANCE 5
 #define BASE_SPEED 255
 
 // define delays
@@ -80,7 +81,7 @@ void loop() {
         // on/off controller
         int state_left = get_IR_reading(IR_LEFT);
         int state_right = get_IR_reading(IR_RIGHT);
-        bangbang(state_left, state_right, 5);
+        bangbang(state_left, state_right);
     } else {
         // encountered black line
         // stop both motors
@@ -291,14 +292,17 @@ void turn(int code) {
 }
 
 // function for the on/off controller
-void bangbang(int state_left, int state_right, int tolerance) {
-    if (state_left < (SETPOINT_LEFT - tolerance)) {
+void bangbang(int state_left, int state_right) {
+    if (state_left < (SETPOINT_LEFT - TOLERANCE)) {
+        // turn right
         motor_left.run(-255);
         motor_right.run(50);
-    } else if (state_right < (SETPOINT_RIGHT - tolerance)) {
+    } else if (state_right < (SETPOINT_RIGHT - TOLERANCE)) {
+        // turn left
         motor_left.run(-50);
         motor_right.run(255);
     } else {
+        // move forward
         motor_left.run(-255);
         motor_right.run(240);
     }
@@ -322,5 +326,20 @@ void ending() {
         rgb_led.setColor(red, green, blue);
         rgb_led.show();
         delay(DELAY_BLINK);
+    }
+}
+
+loop {
+    if line sensor detects white {
+        on/off controller
+    } else {
+        run color detection
+        if color black is detected {
+            run sound recognition
+            if no sound {
+                stop the run
+            }
+        }
+        turn the vehicle
     }
 }
