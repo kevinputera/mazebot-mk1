@@ -24,23 +24,18 @@
 #define U_TURN 745
 #define STRAIGHT 610
 
-// define color calibration values
-#define WHITE 309
-#define BLACK 54
-#define GREY 255
-
 // define color reading boundaries
-#define WHITE_UPPER 800
-#define WHITE_LOWER 520
-#define BLACK_UPPER 90
-#define RED_UPPER 140
-#define RED_LOWER 90
-#define ORANGE_UPPER 180
-#define ORANGE_LOWER 140
-#define GREEN_UPPER 265
-#define GREEN_LOWER 200
-#define BLUE_UPPER 520
-#define BLUE_LOWER 350
+#define WHITE_UPPER 854
+#define WHITE_LOWER 574
+#define BLACK_UPPER 144
+#define RED_UPPER 194
+#define RED_LOWER 144
+#define ORANGE_UPPER 234
+#define ORANGE_LOWER 194
+#define GREEN_UPPER 319
+#define GREEN_LOWER 254
+#define BLUE_UPPER 574
+#define BLUE_LOWER 404
 
 // define number of samples taken
 #define NUM_OF_SOUND_SAMPLES 200
@@ -156,23 +151,29 @@ float get_hundred_signal(int times) {
    BLACK -> return 5
    OTHERS -> return -1 */
 int get_color_code() {
-    int reading = get_light_avg(NUM_OF_LIGHT_SAMPLES);
-    float color = (float) (reading - BLACK) / GREY * 255;
+    int color = get_light_avg(NUM_OF_LIGHT_SAMPLES);
 
     // get color codes
     if (color > WHITE_LOWER && color < WHITE_UPPER) {
+        // WHITE
         return 2;
     } else if (color < BLACK_UPPER) {
+        // BLACK
         return 5;
     } else if (color > RED_LOWER && color < RED_UPPER) {
+        // RED
         return 0;
     } else if (color > ORANGE_LOWER && color < ORANGE_UPPER) {
+        // ORANGE
         return 3;
     } else if (color > GREEN_LOWER && color < GREEN_UPPER) {
+        // GREEN
         return 1;
     } else if (color > BLUE_LOWER && color < BLUE_UPPER) {
+        // BLUE
         return 4;
     }
+    // fail to detect
     return -1;
 }
 
