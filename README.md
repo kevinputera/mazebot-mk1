@@ -11,7 +11,6 @@ PORTS & PINS:
 - pin A1 IR right
 - pin A2 sound low frequency
 - pin A3 sound high frequency
-
 - port M1 right motor
 - port M2 left motor
 - port 1 line sensor
